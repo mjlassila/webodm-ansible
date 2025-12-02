@@ -1,0 +1,12 @@
+---
+- name: restart webodm
+  ansible.builtin.command:
+    cmd: >
+      ./webodm.sh restart
+      --port {{ webodm_host_port }}
+      --default-nodes {{ webodm_default_nodes }}
+      {{ webodm_extra_flags }}
+  args:
+    chdir: "{{ webodm_install_dir }}"
+  become: true
+  become_user: "{{ webodm_run_user }}"

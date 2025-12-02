@@ -1,0 +1,78 @@
+---
+- name: Ensure WebODM install directory exists
+  ansible.builtin.file:
+    path: "{{ webodm_install_dir }}"
+    state: directory
+    owner: "{{ webodm_run_user }}"
+    group: "{{ webodm_run_user }}"
+    mode: "0755"
+
+- name: Clone WebODM repository
+  ansible.builtin.git:
+    repo: "{{ webodm_repo_url }}"
+    version: "{{ webodm_repo_version }}"
+    dest: "{{ webodm_install_dir }}"
+    update: yes
+  register: webodm_git
+
+- name: Ensure webodm.sh is executable
+  ansible.builtin.file:
+    path: "{{ webodm_install_dir }}/webodm.sh"
+    mode: "0755"
+
+- name: Optionally render custom .env for WebODM
+  when: webodm_env_template_enabled
+  ansible.builtin.template:
+    src: "{{ webodm_env_template_src }}"
+    dest: "{{ webodm_env_dest }}"
+    owner: "{{ webodm_run_user }}"
+    group: "{{ webodm_run_user }}"
+    mode: "0640"
+  notify:
+    - restart webodm
+
+# 1) Start WebODM asynchronously
+- name: Start (or upgrade) WebODM via webodm.sh (async)
+  ansible.builtin.command:
+    cmd: >
+      ./webodm.sh start
+      --port {{ webodm_host_port }}
+      --default-nodes {{ webodm_default_nodes }}
+      {{ webodm_extra_flags }}
+  args:
+    chdir: "{{ webodm_install_dir }}"
+  become: true
+  become_user: "{{ webodm_run_user }}"
+  async: 1800
+  poll: 0
+  register: webodm_start_job
+
+# 2) Wait a moment before polling
+- name: Initial delay before HTTPS checks
+  ansible.builtin.pause:
+    seconds: 60
+
+# 3) Poll port 443 up to 5 times after the delay
+- name: Poll WebODM HTTPS (port 443) up to 5 times
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 443
+    state: started
+    timeout: 180 # per-attempt timeout
+    sleep: 10
+    delay: 5
+  register: webodm_https_check
+  retries: 5
+  until: webodm_https_check is succeeded
+
+# Show final message once HTTPS is up
+- name: Show WebODM URL
+  ansible.builtin.debug:
+    msg: "==== WebODM running on https://{{ webodm_hostname }} ===="
+  when: webodm_https_check is succeeded
+
+# Optional: end play after WebODM is confirmed up
+- name: End play after WebODM is up
+  ansible.builtin.meta: end_play
+  when: webodm_https_check is succeeded
+

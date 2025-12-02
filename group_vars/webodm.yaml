@@ -1,0 +1,18 @@
+webodm_repo_url: "https://github.com/OpenDroneMap/WebODM.git"
+webodm_install_dir: "/opt/webodm"
+webodm_repo_version: "master"
+webodm_hostname: ""
+
+# Web interface port exposed on the host
+webodm_host_port: 443
+
+# Number of default processing nodes (node-odm-1 etc.) to auto-create
+webodm_default_nodes: 1
+
+# Extra flags to pass to webodm.sh
+# See WebODM README for flags
+webodm_extra_flags: "--ssl --hostname {{webodm_hostname}}"
+
+# user to own the WebODM checkout
+webodm_run_user: "{{ ansible_user | default('ubuntu') }}"
+

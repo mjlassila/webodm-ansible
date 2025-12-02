@@ -1,0 +1,11 @@
+---
+webodm_repo_url: "https://github.com/OpenDroneMap/WebODM.git"
+webodm_repo_version: "master"
+webodm_install_dir: "/opt/webodm"
+webodm_host_port: 443
+webodm_default_nodes: 1
+webodm_extra_flags: ""
+webodm_run_user: "ubuntu"
+webodm_env_template_enabled: false
+webodm_env_template_src: "webodm.env.j2"
+webodm_env_dest: "{{ webodm_install_dir }}/.env"

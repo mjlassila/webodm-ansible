@@ -1,0 +1,13 @@
+---
+- name: Install WebODM with Docker
+  hosts: webodm
+  become: true
+
+  vars_files:
+    - group_vars/webodm.yaml
+
+  roles:
+    - role: common
+    - role: docker
+    - role: webodm
+
